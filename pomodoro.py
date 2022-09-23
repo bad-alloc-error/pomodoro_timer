@@ -195,3 +195,54 @@ class Pomodoro(QWidget):
         v_box.addWidget(self.long_break_lcd)
         v_box.addLayout(button_h_box)
         self.long_break_tab.setLayout(v_box)
+
+    def start_count_down(self):
+        """
+        Inicia o timer, se o timer na aba atual for 00:00, reinicia o time caso o usuário aperte o botão de iniciar
+        """
+
+        self.current_start_button.setEnabled(False)
+
+        # reinicia a contagem se o usuário tiver completado 4 ciclos de pomodoro
+        if self.task_is_set == True and self.task_complete_counter == 0:
+            self.counter_label.setText("{}/4".format(self.task_complete_counter))
+        
+        remaining_time = self.calculate_display_time(self.current_time_limit)
+        
+        if remaining_time == "00:00":
+            self.reset_count_down()
+            self.timer.start(1000)
+        else:
+            self.timer.start(1000)
+
+    def stop_count_down(self):
+        """
+            Se o timer estivendo sendo executado, pare.
+        """
+        if self.timer.isActive() != False:
+            self.timer.stop()
+
+        self.current_start_button.setEnabled(True)
+
+    def reset_count_down(self):
+        """
+            Reinicia o timer para a aba corrente se o botão Reiniciar for clicado.
+        """
+        self.stop_count_down()
+        
+        if self.current_tab_selected == 0:
+            self.pomodoro_limit = POMODORO_TIME
+            self.current_time_limit = self.pomodoro_limit
+            reset_time = self.calculate_display_time(self.current_time_limit)
+
+        elif self.current_tab_selected == 1: 
+            self.short_break_limit = SHORT_BREAK_TIME
+            self.current_time_limit = self.short_break_limit
+            reset_time = self.calculate_display_time(self.current_time_limit)
+
+        elif self.current_tab_selected == 2: 
+            self.long_break_limit = LONG_BREAK_TIME
+            self.current_time_limit = self.long_break_limit
+            reset_time = self.calculate_display_time(self.current_time_limit)
+
+        self.current_lcd.display(reset_time)
