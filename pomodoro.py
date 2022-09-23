@@ -246,3 +246,28 @@ class Pomodoro(QWidget):
             reset_time = self.calculate_display_time(self.current_time_limit)
 
         self.current_lcd.display(reset_time)
+
+    def update_timer(self):
+        """
+            Atualiza o timer e o widget LCD, se tiver uma tarefa sendo executada 
+            também atualiza o contador.
+        """
+       
+        remaining_time = self.calculate_display_time(self.current_time_limit)
+        if remaining_time == "00:00":
+            self.stop_count_down()
+            self.current_lcd.display(remaining_time)
+
+        if self.current_tab_selected == 0 and self.task_is_set == True:
+            self.task_complete_counter += 1
+            if self.task_complete_counter == 4:
+                self.counter_label.setText("Tempo pra uma longa pausa. {}/4".format(self.task_complete_counter))
+                self.task_complete_counter = 0
+            
+            elif self.task_complete_counter < 4:
+                self.counter_label.setText("{}/4".format(self.task_complete_counter))
+        else:
+            # atualiza o timer decrementando (por um segundo) o timer atual
+            self.current_time_limit -= 1000
+            self.current_lcd.display(remaining_time)
+
