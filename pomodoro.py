@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QTabWidget, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout,
-QGroupBox)
+QGroupBox, QLCDNumber)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QTimer
 
@@ -103,3 +103,65 @@ class Pomodoro(QWidget):
         main_v_box.addWidget(self.tab_bar)
         main_v_box.addWidget(task_bar_gb)
         self.setLayout(main_v_box)
+
+    def set_pomodoro_tab(self):
+        """
+            Configura a aba Pomodoro
+        """
+
+        # converte o tempo inicial para ser exibido no timer
+        start_time = self.calculate_display_time(self.pomodoro_limit)
+
+        self.pomodoro_lcd = QLCDNumber()
+        self.pomodoro_lcd.setObjectName("PomodoroLCD")
+        self.pomodoro_lcd.setSegmentStyle(QLCDNumber.Filled)
+        self.pomodoro_lcd.display(start_time)
+
+        self.pomodoro_start_button = QPushButton("Iniciar")
+        self.pomodoro_start_button.clicked.connect(self.start_count_down)
+
+        self.pomodoro_stop_button = QPushButton("Parar")
+        self.pomodoro_stop_button.clicked.connect(self.stop_count_down)
+
+        self.pomodoro_reset_button = QPushButton("Reiniciar")
+        self.pomodoro_reset_button.clicked.connect(self.reset.count_down)
+
+        button_h_box = QHBoxLayout()
+        button_h_box.addWidget(self.pomodoro_start_button)
+        button_h_box.addWidget(self.pomodoro_stop_button)
+        button_h_box.addWidget(self.pomodoro_reset_button)
+
+        v_box = QVBoxLayout()
+        v_box.addWidget(self.pomodoro_lcd)
+        v_box.addLayout(button_h_box)
+        self.pomodoro_tab.setLayout(v_box)
+
+    def set_short_break_tab(self):
+        """
+            Configura Short Break Tab
+        """
+
+        start_time = self.calculate_display_time(self.short_break_limit)
+        self.short_break_lcd = QLCDNumber()
+        self.short_break_lcd.setObjectName("ShortLCD")
+        self.short_break_lcd.setSegmentStyle(QLCDNumber.Filled)
+        self.short_break_lcd.display(start_time)
+
+        self.short_start_button = QPushButton("Iniciar")
+        self.short_start_button.clicked.connect(self.start_count_down)
+
+        self.short_stop_button = QPushButton("Parar")
+        self.short_stop_button.clicked.connect(self.stop_count_down)
+
+        self.short_reset_button = QPushButton("Reiniciar")
+        self.short_reset_button.clicked.connect(self.reset_count_down)
+
+        button_h_box = QHBoxLayout()
+        button_h_box.addWidget(self.short_start_button)
+        button_h_box.addWidget(self.short_stop_button)
+        button_h_box.addWidget(self.short_reset_button)
+
+        v_box = QVBoxLayout()
+        v_box.addWidget(self.short_break_lcd)
+        v_box.addLayout(button_h_box)
+        self.short_break_tab.setLayout(v_box)
