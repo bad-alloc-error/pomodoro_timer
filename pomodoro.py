@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (QWidget, QTabWidget, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout,
-QGroupBox, QLCDNumber)
+QGroupBox, QLCDNumber, QLabel)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
 
 #Variaves globais para cada timer
 POMODORO_TIME    = 1500000 #25 minutos
@@ -11,16 +11,19 @@ LONG_BREAK_TIME  = 900000  #15 minutos
 class Pomodoro(QWidget):
     def __init__(self) -> None:
         super().__init__()
-        self.pomodoro_limit    = POMODORO_TIME
-        self.short_break_limit = SHORT_BREAK_TIME
-        self.long_break_limit  = LONG_BREAK_TIME
         self.load_ui()
+       
+       
 
     def load_ui(self):
         """
             Inicializa a janela e carrega os widgets
             :param None
         """
+
+        self.pomodoro_limit    = POMODORO_TIME
+        self.short_break_limit = SHORT_BREAK_TIME
+        self.long_break_limit  = LONG_BREAK_TIME
 
         self.setMinimumSize(500, 400)
         self.setWindowTitle('0.1 Pomodoro Timer')
@@ -75,6 +78,10 @@ class Pomodoro(QWidget):
         # sinal
         self.tab_bar.currentChanged.connect(self.tabs_switched)
 
+        self.set_pomodoro_tab()
+        self.set_short_break_tab()
+        self.set_long_break_tab()
+
         # cria os widgets button e lineedit e a barra de tarefas para o perfil Pomodoro
         self.enter_task_lineedit = QLineEdit()
         self.enter_task_lineedit.setClearButtonEnabled(True)
@@ -124,7 +131,7 @@ class Pomodoro(QWidget):
         self.pomodoro_stop_button.clicked.connect(self.stop_count_down)
 
         self.pomodoro_reset_button = QPushButton("Reiniciar")
-        self.pomodoro_reset_button.clicked.connect(self.reset.count_down)
+        self.pomodoro_reset_button.clicked.connect(self.reset_count_down)
 
         button_h_box = QHBoxLayout()
         button_h_box.addWidget(self.pomodoro_start_button)
@@ -271,3 +278,99 @@ class Pomodoro(QWidget):
             self.current_time_limit -= 1000
             self.current_lcd.display(remaining_time)
 
+    def tabs_switched(self, index):
+        """As views precisam ser atualizadas de acordo com a qual o usuário está interagindo, essa função
+        atualiza essas infos da view corrente.
+        """
+        
+        self.current_tab_selected = index
+        self.stop_count_down()
+
+        # reseta as variáveis, timer e os widgets dependendo da aba que está setada em current_tab_selected
+        if self.current_tab_selected  == 0: #pomodoro
+            self.current_start_button = self.pomodoro_start_button
+            self.current_stop_button  = self.pomodoro_stop_button
+            self.current_reset_button = self.pomodoro_reset_button
+            self.pomodoro_limit       = POMODORO_TIME
+            self.current_time_limit   = self.pomodoro_limit
+
+            reset_time = self.calculate_display_time(self.current_time_limit)
+            self.current_lcd          = self.pomodoro_lcd
+            self.current_lcd.display(reset_time)
+        
+        elif self.current_tab_selected == 1: # short
+            self.current_start_button  = self.short_start_button
+            self.current_stop_button   = self.short_stop_button
+            self.current_reset_button  = self.short_reset_button
+            self.short_break_limit     = SHORT_BREAK_TIME
+            self.current_time_limit    = self.short_break_limit
+            reset_time                 = self.calculate_display_time(self.current_time_limit)
+            self.current_lcd           = self.short_break_lcd
+            self.current_lcd.display(reset_time)
+
+        elif self.current_tab_selected == 2: # long
+            self.current_start_button  = self.long_start_button
+            self.current_stop_button   = self.long_stop_button
+            self.current_reset_button  = self.long_reset_button
+            self.long_break_limit      = LONG_BREAK_TIME
+            self.current_time_limit    = self.long_break_limit
+            reset_time                 = self.calculate_display_time(self.current_time_limit)
+            self.current_lcd           = self.long_break_lcd
+            self.current_lcd.display(reset_time)
+        
+    def add_task_to_task_bar(self):
+        """
+            Quando o usuário clicar no botão pra add, os widgets para a nova tarefa
+            serão adicionados na task bar, apenas uma tarefa por vez é permitida.
+        """
+        text                            = self.enter_task_lineedit.text()
+        self.enter_task_lineedit.clear()
+
+        # altera a qtd de tarefas
+        if text != "" and self.number_of_tasks != 1:
+            self.enter_task_lineedit.setReadOnly(True)
+            self.task_is_set = True
+            self.new_task = QLabel(text)
+
+            self.counter_label = QLabel("{}/4".format(self.task_complete_counter))
+            self.counter_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+            self.cancel_task_button = QPushButton(QIcon("images/icons/menos.png"), None)
+            self.cancel_task_button.setMaximumWidth(24)
+            self.cancel_task_button.clicked.connect(self.clear_current_task)
+
+            self.new_task_h_box = QHBoxLayout()
+            self.new_task_h_box.addWidget(self.new_task)
+            self.new_task_h_box.addWidget(self.counter_label)
+            self.new_task_h_box.addWidget(self.cancel_task_button)
+            self.tasks_v_box.addLayout(self.new_task_h_box)
+            self.number_of_tasks += 1
+    
+    def clear_current_task(self):
+        """
+            Deleta as tarefas e reseta as variaveis
+        """
+        
+        # remove os itens do parent widget colocando o setParent pra None
+        self.new_task.setParent(None)
+        self.counter_label.setParent(None)
+        self.cancel_task_button.setParent(None)
+        self.number_of_tasks -= 1
+        self.task_is_set = False
+        self.task_complete_counter = 0
+        self.enter_task_lineedit.setReadOnly(False)
+    
+    def convert_total_time(self, time_in_milli):
+        """
+            Conversão dos milisegundos
+        """
+        minutes = (time_in_milli / (1000 * 60)) % 60
+        seconds = (time_in_milli / 1000) % 60
+        return int(minutes), int(seconds)
+
+    def calculate_display_time(self, time):
+        """
+            Calcula o tempo que deve ser mostrado no lcd
+        """
+        minutes, seconds = self.convert_total_time(time)
+        amount_of_time = "{:02d}:{:02d}".format(minutes, seconds)
+        return amount_of_time
